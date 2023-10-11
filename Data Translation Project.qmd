@@ -1,0 +1,283 @@
+---
+title: "Data Translation Challenge"
+author: "Nishanth Sudhaharan"
+format: 
+  html:
+    toc: true
+    embed-resources: true
+editor: visual
+---
+
+**AUDIENCE:** Sales Managers in a mobile dealership, who want some information on the sales pattern of the mobile phones that they sell on Amazon.
+
+```{r}
+#| include: false
+library(tidyverse)
+library(vtable)
+library(ggthemes)
+library(reactable)
+library(lubridate)
+library(ggalt)
+library(scales)
+library(ggforce)
+library(ggrepel)
+```
+
+```{r}
+#| include: false
+load('sales_data.Rdata')
+```
+
+```{r}
+#| include: false
+zip_info <- read_csv('zip_info.csv')
+```
+
+```{r}
+#| include: false
+e<-sales%>%
+  filter(Product=="Google Phone"|Product=="Vareebadd Phone"|Product=="iPhone")%>%
+  group_by(Product)%>%
+  summarize(Count=n())
+```
+
+```{r}
+#| include: false
+d<-sales%>%
+  filter(Product=="Google Phone"|Product=="Vareebadd Phone"|Product=="iPhone")%>%
+  group_by(Product,Date)%>%
+  summarize(Count=n()) 
+```
+
+#### Amazon Sales Trend: Mobile Phones in 2019
+
+The aim of this document is to analyze the trends in the sales of three mobile phones - iPhone, Google Pixel, and Vareebadd **in Amazon in 2019** and provide you with some interesting insights that I noticed. The pattern of sales of these products are **analyzed based their sales in random urban cities** and the quantities sold per day, every month in 2019.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+ggplot(d, aes(x = Date, y = Count,colour=Product))+
+ geom_smooth()+
+  labs(title = 'Amazon Sales Curve: Sales of Mobile Phones in 2019',
+       x= NULL,
+       y = 'Quantity sold per day',
+       colour=NULL)+
+  scale_y_continuous(breaks = c(0,10,20,30,40), limits = c(0,40))+
+scale_x_date(breaks = c(ymd('2019-01-01'),ymd('2019-02-01'),ymd('2019-03-01'),ymd('2019-04-01'),ymd('2019-05-01'),ymd('2019-06-01'),ymd('2019-07-01'),ymd('2019-08-01'),ymd('2019-09-01'),ymd('2019-10-01'),ymd('2019-11-01'),ymd('2019-12-01')),labels=month.abb)+
+  annotate("text", x = ymd('2019-11-25'), y = 30, label = "iPhone",
+           family = "serif", fontface = "bold", colour = "green4", size = 5) +
+    annotate("text", x = ymd('2019-11-30'), y = 15, label = "Google Phone",
+           family = "serif", fontface = "bold", colour = "chocolate1", size = 5) +
+      annotate("text", x = ymd('2019-11-30'), y = 4, label = "Vareebadd Phone",
+           family = "serif", fontface = "bold", colour = "deepskyblue2", size = 5) +
+  theme_classic()+
+  theme(legend.position = "none")
+```
+
+Though the quantities of phone sold eah day varies for the three phones, they maintain a pretty similar curve in sales trend. The sales of these phones starts to drop gradually from April and continues to drop until August. After August, the sales of these phones gradually increases again.
+
+Yes, exactly, that is what the data says and it is pretty obviously understood looking at the visualization. But, what causes these increase/decrease in sales to occur? Are the reasons common to all three phones? Looks like we got much more analysis to do, right?
+
+```{r}
+#| include: false
+a<-sales%>%
+  filter(Product=='iPhone')%>%
+  group_by(Date)%>%
+  summarize(Count=n())
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+ggplot(a, aes(x = Date, y = Count))+
+  geom_smooth(color='chartreuse3')+
+   geom_line(alpha=0.3,size=0.5)+
+ labs(title = 'Amazon Sales Curve: Sales of iPhone in 2019',
+       x= NULL,
+       y = 'Quantity sold per day')+
+   scale_y_continuous(breaks = c(0,10,20,30,40), limits = c(0,40))+
+  scale_x_date(breaks = c(ymd('2019-01-01'),ymd('2019-02-01'),ymd('2019-03-01'),ymd('2019-04-01'),ymd('2019-05-01'),ymd('2019-06-01'),ymd('2019-07-01'),ymd('2019-08-01'),ymd('2019-09-01'),ymd('2019-10-01'),ymd('2019-11-01'),ymd('2019-12-01')),labels=month.abb)+
+   geom_segment(aes(x = ymd('2019-08-01'), y = 14., xend = ymd('2019-08-01'), yend = 25.2),
+                  arrow = arrow(length = unit(0.4, "cm")))+
+  annotate(geom = 'label', label = label_wrap(10)('Release of iPhone 11'),
+           x = ymd('2019-08-01'), y = 30, hjust = .5, vjust = .5,
+           family = 'serif', size = 12/.pt,color='darkgreen') + 
+  theme_classic()
+```
+
+It is clear in the case of iPhones. We all know that Apple launches new mobile phones every year around August. From the visualization, it can be seen that the sales starts to drop as it comes close to the release of the Apple iPhone 11. It makes perfect sense because people might wait for a couple of months instead of buying a new phone that is going to be outdated in a month. After the iPhone 11 is released, the quantity of iPhones sold increases over the next months.
+
+```{r}
+#| include: false
+b<-sales%>%
+  filter(Product=='Google Phone')%>%
+  group_by(Date)%>%
+  summarize(Count=n())
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+ggplot(b, aes(x = Date, y = Count))+
+  geom_line(alpha=0.3,size=0.5)+
+   geom_smooth(color='chocolate1')+
+   labs(title = 'Amazon Sales Curve: Sales of Google Phones in 2019',
+       x= NULL,
+       y = 'Quantity sold per day')+
+   scale_y_continuous(breaks = c(0,10,20,30,40), limits = c(0,40))+
+  scale_x_date(breaks = c(ymd('2019-01-01'),ymd('2019-02-01'),ymd('2019-03-01'),ymd('2019-04-01'),ymd('2019-05-01'),ymd('2019-06-01'),ymd('2019-07-01'),ymd('2019-08-01'),ymd('2019-09-01'),ymd('2019-10-01'),ymd('2019-11-01'),ymd('2019-12-01')),labels=month.abb)+
+   geom_segment(aes(x = ymd('2019-08-01'), y = 12.2, xend = ymd('2019-08-01'), yend = 25.2),
+                  arrow = arrow(length = unit(0.4, "cm")))+
+  annotate(geom = 'label', label = label_wrap(10)('Release of Google Pixel 4'),
+           x = ymd('2019-08-01'), y = 30, hjust = .5, vjust = .5,
+           family = 'serif', size = 12/.pt,color='darkgreen') + 
+    geom_segment(aes(x = ymd('2019-04-01'), y = 16.2, xend = ymd('2019-04-01'), yend = 25.2),
+                  arrow = arrow(length = unit(0.4, "cm")))+
+  annotate(geom = 'label', label = label_wrap(10)('Release of Google Pixel 3a'),
+           x = ymd('2019-04-01'), y = 30, hjust = .5, vjust = .5,
+           family = 'serif', size = 12/.pt,color='red') + 
+  theme_classic()
+```
+
+It is really interesting to see how the release of new models played contrasting roles in the sales of those phone companies. Google launched the upgraded version of its Pixel 3 in the spring of 2019. From the graph, it can be noted that the sales of Google phones experience a downfall in the months - April, May, June and July. Google launches another version of the Pixel mobile phone in the same year - Google Pixel 4.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+ggplot(b, aes(x = Date, y = Count))+
+  geom_line(alpha=0.3,size=0.5)+
+   geom_smooth(color='chocolate1')+
+ labs(title = 'Amazon Sales Curve: Sales of Google Phones in 2019',
+       x= NULL,
+       y = 'Quantity sold per day')+
+  scale_y_continuous(breaks = c(0,10,20,30), limits = c(0,32))+
+  scale_x_date(breaks = c(ymd('2019-01-01'),ymd('2019-02-01'),ymd('2019-03-01'),ymd('2019-04-01'),ymd('2019-05-01'),ymd('2019-06-01'),ymd('2019-07-01'),ymd('2019-08-01'),ymd('2019-09-01'),ymd('2019-10-01'),ymd('2019-11-01'),ymd('2019-12-01')),labels=month.abb)+
+  theme_classic()+
+   facet_zoom(xlim = c(ymd('2019-04-01'),ymd('2019-09-01')), zoom.size = 2)
+```
+
+Let us look closely at the time period after the release of Pixel 3a in April. It is evident from the data that sales dropped after the release of Google Pixel 3a. We can notice that the Google phone doesn't do well in the market. Initially after the launch, the quantities are sold at constant numbers each day, which starts to decline few weeks after the launch. In September 2019, the Pixel 4 is launched.
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+ggplot(b, aes(x = Date, y = Count))+
+  geom_line(alpha=0.3,size=0.5)+
+   geom_smooth(color='chocolate1')+
+   labs(title = 'Amazon Sales Curve: Sales of Google Phones in 2019',
+       x= NULL,
+       y = 'Quantity sold per day')+
+  scale_x_date(breaks = c(ymd('2019-01-01'),ymd('2019-02-01'),ymd('2019-03-01'),ymd('2019-04-01'),ymd('2019-05-01'),ymd('2019-06-01'),ymd('2019-07-01'),ymd('2019-08-01'),ymd('2019-09-01'),ymd('2019-10-01'),ymd('2019-11-01'),ymd('2019-12-01')),labels=month.abb)+
+  theme_classic()+
+   facet_zoom(xlim = c(ymd('2019-08-01'),ymd('2020-01-01')), zoom.size = 2)
+```
+
+The declining sales in Google phones starts to develop in good ways after the release of Google Pixel 4. From being at around 10 products sold in these cities per day, it went up to 20 products being sold each day by the end of December. The sales doubled in numbers after August.
+
+```{r}
+#| include: false
+c<-sales%>%
+  filter(Product=='Vareebadd Phone')%>%
+  group_by(Date)%>%
+  summarize(Count=n())
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+ggplot(c, aes(x = Date, y = Count))+
+  geom_smooth(color='deepskyblue2')+
+   geom_line(alpha=0.3,size=0.5)+
+ labs(title = 'Amazon Sales Curve: Sales of Vareebadd Phones in 2019',
+       x= NULL,
+       y = 'Quantity sold per day')+
+  scale_y_continuous(breaks = c(0,10,20,30,40), limits = c(0,40))+
+  scale_x_date(breaks = c(ymd('2019-01-01'),ymd('2019-02-01'),ymd('2019-03-01'),ymd('2019-04-01'),ymd('2019-05-01'),ymd('2019-06-01'),ymd('2019-07-01'),ymd('2019-08-01'),ymd('2019-09-01'),ymd('2019-10-01'),ymd('2019-11-01'),ymd('2019-12-01')),labels=month.abb)+
+  theme(axis.text.x = element_text(size=10, face="bold", color = "black"))+
+  theme_classic()
+
+```
+
+Although Vareebadd phones aren't as common as iPhones and Google phones in these cities, it is really interesting that even it followed the similar pattern in sales as the other two phones in 2019. The sales drops in the summer and starts to increase in August.
+
+```{r}
+#| include: false
+d<-sales%>%
+  filter(Product=="Google Phone"|Product=="Vareebadd Phone"|Product=="iPhone")%>%
+  group_by(Product,Date)%>%
+  summarize(Count=n()) 
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+ggplot(d, aes(x = Date, y = Count,colour=Product))+
+ 
+   geom_smooth()+
+  labs(title = 'Amazon Sales Curve: Sales of Mobile Phones in 2019',
+       x= NULL,
+       y = 'Quantity sold per day',
+       colour=NULL)+
+  scale_y_continuous(breaks = c(0,10,20,30,40), limits = c(0,40))+
+  scale_x_date(breaks = c(ymd('2019-01-01'),ymd('2019-02-01'),ymd('2019-03-01'),ymd('2019-04-01'),ymd('2019-05-01'),ymd('2019-06-01'),ymd('2019-07-01'),ymd('2019-08-01'),ymd('2019-09-01'),ymd('2019-10-01'),ymd('2019-11-01'),ymd('2019-12-01')),labels=month.abb)+
+  
+  geom_segment(aes(x = ymd('2019-08-01'), y = 14.9, xend = ymd('2019-08-01'), yend = 25.4),
+                  arrow = arrow(length = unit(0.4, "cm")))+
+  annotate(geom = 'label', label = label_wrap(10)('Release of iPhone 11'),
+           x = ymd('2019-08-01'), y = 30, hjust = .5, vjust = .5,
+           family = 'serif', size = 12/.pt,color='darkgreen') +
+    annotate("text", x = ymd('2019-11-25'), y = 30, label = "iPhone",
+           family = "serif", fontface = "bold", colour = "green4", size = 5) +
+    annotate("text", x = ymd('2019-11-30'), y = 15, label = "Google Phone",
+           family = "serif", fontface = "bold", colour = "chocolate1", size = 5) +
+      annotate("text", x = ymd('2019-11-30'), y = 4, label = "Vareebadd Phone",
+           family = "serif", fontface = "bold", colour = "deepskyblue2", size = 5) +
+  
+  theme_classic()+
+  theme(legend.position = "none")
+  
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+ggplot(d, aes(x = Date, y = Count,colour=Product))+
+ 
+   geom_smooth()+
+  labs(title = 'Amazon Sales Curve: Sales of Mobile Phones in 2019',
+       x= NULL,
+       y = 'Quantity sold per day',
+       colour=NULL)+
+  scale_y_continuous(breaks = c(0,10,20,30,40), limits = c(0,40))+
+  scale_x_date(breaks = c(ymd('2019-01-01'),ymd('2019-02-01'),ymd('2019-03-01'),ymd('2019-04-01'),ymd('2019-05-01'),ymd('2019-06-01'),ymd('2019-07-01'),ymd('2019-08-01'),ymd('2019-09-01'),ymd('2019-10-01'),ymd('2019-11-01'),ymd('2019-12-01')),labels=month.abb)+
+  
+   geom_segment(aes(x = ymd('2019-08-01'), y = 12.2, xend = ymd('2019-08-01'), yend = 25.4),
+                  arrow = arrow(length = unit(0.4, "cm")))+
+  annotate(geom = 'label', label = label_wrap(10)('Release of Google Pixel 4'),
+           x = ymd('2019-08-01'), y = 30, hjust = .5, vjust = .5,
+           family = 'serif', size = 12/.pt,color='darkgreen') + 
+    geom_segment(aes(x = ymd('2019-04-01'), y = 16.2, xend = ymd('2019-04-01'), yend = 25.4),
+                  arrow = arrow(length = unit(0.4, "cm")))+
+  annotate(geom = 'label', label = label_wrap(10)('Release of Google Pixel 3a'),
+           x = ymd('2019-04-01'), y = 30, hjust = .5, vjust = .5,
+           family = 'serif', size = 12/.pt,color='red') + 
+      annotate("text", x = ymd('2019-11-25'), y = 30, label = "iPhone",
+           family = "serif", fontface = "bold", colour = "green4", size = 5) +
+    annotate("text", x = ymd('2019-11-30'), y = 15, label = "Google Phone",
+           family = "serif", fontface = "bold", colour = "chocolate1", size = 5) +
+      annotate("text", x = ymd('2019-11-30'), y = 4, label = "Vareebadd Phone",
+           family = "serif", fontface = "bold", colour = "deepskyblue2", size = 5) +
+  
+  theme_classic()+
+  theme(legend.position = "none")
+```
+
+From the visualizations, we can understand that the launch of a newer version of the product affects the sales of the existing product in the months nearing the launch. People tend to buy the product more when a newer version is available, thus, increasing the sales of the particular product. In order to avoid the drop in sales during periods like these, the prices of the products can be reduced, additional offers or gifts can be provided to promote sales during the dry period until the launch of the latest model.
